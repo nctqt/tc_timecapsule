@@ -23,7 +23,7 @@ CREATE TABLE videos (
     milestone_id UUID REFERENCES milestones(id) ON DELETE SET NULL,
     youtube_video_id VARCHAR(50) UNIQUE NOT NULL,
     title VARCHAR(255) NOT NULL,
-    channel_name VARCHAR(255),
+    channel_name VARCHAR(255) NOT NULL,
     published_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
