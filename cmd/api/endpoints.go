@@ -21,12 +21,10 @@ func registerEndpoints(apiCfg *apiConfig) {
 	// timeline milestones endpoints (nested under cases)
 	apiCfg.mux.HandleFunc("POST /api/v1/cases/{case_id}/milestones", apiCfg.handlerCreateMilestone)
 	apiCfg.mux.HandleFunc("GET /api/v1/cases/{case_id}/milestones", apiCfg.handlerListMilestonesByCase)
+
+	// milestones not nested
 	apiCfg.mux.HandleFunc("GET /api/v1/milestones/{milestone_id}", apiCfg.handlerGetMilestoneByID)
 	apiCfg.mux.HandleFunc("DELETE /api/v1/milestones/{milestone_id}", apiCfg.handlerDeleteMilestone)
-
-	// milestone linking
-	apiCfg.mux.HandleFunc("PUT /api/v1/milestones/{milestone_id}/videos/{video_id}", apiCfg.handlerLinkVideoToMilestone)
-	apiCfg.mux.HandleFunc("DELETE /api/v1/milestones/{milestone_id}/videos/{video_id}", apiCfg.handlerUnlinkVideoFromMilestone)
 
 	// video indexing endpoints
 	apiCfg.mux.HandleFunc("POST /api/v1/videos", apiCfg.handlerCreateVideo)
@@ -34,4 +32,7 @@ func registerEndpoints(apiCfg *apiConfig) {
 	apiCfg.mux.HandleFunc("GET /api/v1/videos/{video_id}", apiCfg.handlerGetVideoByID)
 	apiCfg.mux.HandleFunc("GET /api/v1/milestones/{milestone_id}/videos", apiCfg.handlerListVideosByMilestone)
 
+	// milestone linking
+	apiCfg.mux.HandleFunc("PUT /api/v1/milestones/{milestone_id}/videos/{video_id}", apiCfg.handlerLinkVideoToMilestone)
+	apiCfg.mux.HandleFunc("DELETE /api/v1/milestones/{milestone_id}/videos/{video_id}", apiCfg.handlerUnlinkVideoFromMilestone)
 }

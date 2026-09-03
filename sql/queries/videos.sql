@@ -24,3 +24,21 @@ SELECT *
 FROM videos
 WHERE milestone_id IS NULL
 ORDER BY published_at DESC;
+
+-- name: GetVideoByID :one
+SELECT *
+FROM videos
+WHERE id = $1
+LIMIT 1;
+
+-- name: LinkVideoToMilestone :exec
+UPDATE videos
+SET milestone_id = $1,
+    updated_at = $3
+WHERE id = $2;
+
+-- name: UnlinkVideoFromMilestone :exec
+UPDATE videos
+SET milestone_id = NULL,
+    updated_at = $2
+WHERE id = $1;

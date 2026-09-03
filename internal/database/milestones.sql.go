@@ -63,6 +63,36 @@ func (q *Queries) CreateMilestone(ctx context.Context, arg CreateMilestoneParams
 	return i, err
 }
 
+const deleteMilestone = `-- name: DeleteMilestone :exec
+DELETE FROM milestones
+WHERE id = $1
+`
+
+func (q *Queries) DeleteMilestone(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteMilestone, id)
+	return err
+}
+
+const getMilestoneByID = `-- name: GetMilestoneByID :one
+SELECT id, title, description, created_at, updated_at 
+FROM cases
+WHERE id = $1 
+LIMIT 1
+`
+
+func (q *Queries) GetMilestoneByID(ctx context.Context, id uuid.UUID) (Case, error) {
+	row := q.db.QueryRowContext(ctx, getMilestoneByID, id)
+	var i Case
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Description,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listMilestonesByCase = `-- name: ListMilestonesByCase :many
 SELECT id, case_id, title, event_date, created_at, updated_at, description, date_precision 
 FROM milestones

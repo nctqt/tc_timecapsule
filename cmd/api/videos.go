@@ -112,3 +112,77 @@ func (cfg *apiConfig) handlerListVideosByMilestone(w http.ResponseWriter, r *htt
 	}
 	respondWithJSON(w, http.StatusOK, videos)
 }
+
+func (cfg *apiConfig) handlerGetVideoByID(w http.ResponseWriter, r *http.Request) {
+	videoID := r.PathValue("video_id")
+	videoUUID, err := uuid.Parse(videoID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid video id format", err)
+		return
+	}
+
+	video, err := cfg.queries.GetVideoByID(r.Context(), videoUUID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not get video by id", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, video)
+}
+
+func (cfg *apiConfig) handlerLinkVideoToMilestone(w http.ResponseWriter, r *http.Request) {
+	videoID := r.PathValue("video_id")
+	videoUUID, err := uuid.Parse(videoID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid video id format", err)
+		return
+	}
+
+	milestoneID := r.PathValue("milestone_id")
+	milestoneUUID, err := uuid.Parse(milestoneID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid id format", err)
+		return
+	}
+
+	nullMilestoneID := uuid.NullUUID{
+		UUID:  milestoneUUID,
+		Valid: true,
+	}
+
+	err = cfg.queries.LinkVideoToMilestone(r.Context(), database.LinkVideoToMilestoneParams{
+		MilestoneID: nullMilestoneID,
+		ID:          videoUUID,
+		UpdatedAt:   time.Now(),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not link video", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
+func (cfg *apiConfig) handlerUnlinkVideoFromMilestone(w http.ResponseWriter, r *http.Request) {
+	videoID := r.PathValue("video_id")
+	videoUUID, err := uuid.Parse(videoID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid video id format", err)
+		return
+	}
+
+	err = cfg.queries.UnlinkVideoFromMilestone(r.Context(), database.UnlinkVideoFromMilestoneParams{
+		ID:        videoUUID,
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not unlink video", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}

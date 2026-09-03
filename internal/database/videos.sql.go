@@ -67,6 +67,48 @@ func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video
 	return i, err
 }
 
+const getVideoByID = `-- name: GetVideoByID :one
+SELECT id, milestone_id, youtube_video_id, title, channel_name, published_at, created_at, updated_at, category
+FROM videos
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error) {
+	row := q.db.QueryRowContext(ctx, getVideoByID, id)
+	var i Video
+	err := row.Scan(
+		&i.ID,
+		&i.MilestoneID,
+		&i.YoutubeVideoID,
+		&i.Title,
+		&i.ChannelName,
+		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Category,
+	)
+	return i, err
+}
+
+const linkVideoToMilestone = `-- name: LinkVideoToMilestone :exec
+UPDATE videos
+SET milestone_id = $1,
+    updated_at = $3
+WHERE id = $2
+`
+
+type LinkVideoToMilestoneParams struct {
+	MilestoneID uuid.NullUUID `json:"milestone_id"`
+	ID          uuid.UUID     `json:"id"`
+	UpdatedAt   time.Time     `json:"updated_at"`
+}
+
+func (q *Queries) LinkVideoToMilestone(ctx context.Context, arg LinkVideoToMilestoneParams) error {
+	_, err := q.db.ExecContext(ctx, linkVideoToMilestone, arg.MilestoneID, arg.ID, arg.UpdatedAt)
+	return err
+}
+
 const listUnlinkedVideos = `-- name: ListUnlinkedVideos :many
 SELECT id, milestone_id, youtube_video_id, title, channel_name, published_at, created_at, updated_at, category 
 FROM videos
@@ -145,4 +187,21 @@ func (q *Queries) ListVideosByMilestone(ctx context.Context, milestoneID uuid.Nu
 		return nil, err
 	}
 	return items, nil
+}
+
+const unlinkVideoFromMilestone = `-- name: UnlinkVideoFromMilestone :exec
+UPDATE videos
+SET milestone_id = NULL,
+    updated_at = $2
+WHERE id = $1
+`
+
+type UnlinkVideoFromMilestoneParams struct {
+	ID        uuid.UUID `json:"id"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (q *Queries) UnlinkVideoFromMilestone(ctx context.Context, arg UnlinkVideoFromMilestoneParams) error {
+	_, err := q.db.ExecContext(ctx, unlinkVideoFromMilestone, arg.ID, arg.UpdatedAt)
+	return err
 }

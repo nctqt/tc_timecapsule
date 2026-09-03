@@ -19,3 +19,7 @@ LIMIT 1;
 SELECT * 
 FROM cases
 ORDER BY created_at DESC;
+
+-- name: DeleteCase :exec
+DELETE FROM cases
+WHERE id = $1;

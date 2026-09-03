@@ -51,6 +51,16 @@ func (q *Queries) CreateCase(ctx context.Context, arg CreateCaseParams) (Case, e
 	return i, err
 }
 
+const deleteCase = `-- name: DeleteCase :exec
+DELETE FROM cases
+WHERE id = $1
+`
+
+func (q *Queries) DeleteCase(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteCase, id)
+	return err
+}
+
 const getCaseByID = `-- name: GetCaseByID :one
 SELECT id, title, description, created_at, updated_at 
 FROM cases

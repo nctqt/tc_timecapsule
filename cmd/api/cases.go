@@ -69,3 +69,22 @@ func (cfg *apiConfig) handlerGetCaseByID(w http.ResponseWriter, r *http.Request)
 
 	respondWithJSON(w, http.StatusOK, caseRecord)
 }
+
+func (cfg *apiConfig) handlerDeleteCase(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("case_id")
+	caseUUID, err := uuid.Parse(id)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid id format", err)
+		return
+	}
+
+	err = cfg.queries.DeleteCase(r.Context(), caseUUID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not delete case", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}

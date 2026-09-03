@@ -82,3 +82,34 @@ func (cfg *apiConfig) handlerListMilestonesByCase(w http.ResponseWriter, r *http
 
 	respondWithJSON(w, http.StatusOK, milestones)
 }
+
+func (cfg *apiConfig) handlerGetMilestoneByID(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("milestone_id")
+	UUID, err := uuid.Parse(id)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid id format", err)
+		return
+	}
+
+	milestone, err := cfg.queries.GetMilestoneByID(r.Context(), UUID)
+	respondWithJSON(w, http.StatusOK, milestone)
+}
+
+func (cfg *apiConfig) handlerDeleteMilestone(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("milestone_id")
+	UUID, err := uuid.Parse(id)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid id format", err)
+		return
+	}
+
+	err = cfg.queries.DeleteMilestone(r.Context(), UUID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not delete milestone", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
