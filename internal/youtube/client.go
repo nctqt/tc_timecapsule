@@ -21,6 +21,7 @@ type VideoMetadata struct {
 	ID          string    `json:"id"`
 	Title       string    `json:"title"`
 	ChannelName string    `json:"channel_name"`
+	Description string    `json:"description"`
 	PublishedAt time.Time `json:"published_at"`
 }
 
@@ -134,6 +135,7 @@ func (c *Client) FetchVideoMetaData(ctx context.Context, inputURL string) (*Vide
 			Snippet struct {
 				Title        string    `json:"title"`
 				ChannelTitle string    `json:"channelTitle"`
+				Description  string    `json:"description"`
 				PublishedAt  time.Time `json:"publishedAt"`
 			} `json:"snippet"`
 		} `json:"items"`
@@ -154,6 +156,7 @@ func (c *Client) FetchVideoMetaData(ctx context.Context, inputURL string) (*Vide
 		ID:          item.ID,
 		Title:       item.Snippet.Title,
 		ChannelName: item.Snippet.ChannelTitle,
+		Description: item.Snippet.Description,
 		PublishedAt: item.Snippet.PublishedAt,
 	}
 	return meta, nil

@@ -1,0 +1,48 @@
+@baseUrl = http://localhost:8080/api/v1
+
+###############################################################################
+# 1. System Health Check
+###############################################################################
+GET http://localhost:8080/api/healthz
+
+
+###############################################################################
+# 2. Ingest / Create a Video (POST /api/v1/videos)
+# Note: Assigning @name allows capturing the response JSON dynamically
+###############################################################################
+# @name createVideo
+POST {{baseUrl}}/videos
+Content-Type: application/json
+
+{
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+}
+
+###
+
+###############################################################################
+# 3. Trigger Async LLM Enrichment (POST /api/v1/videos/{video_id}/enrich)
+# Expect: 202 Accepted ("status": "pending_review")
+###############################################################################
+@videoId = {{createVideo.response.body.id}}
+
+POST {{baseUrl}}/videos/{{videoId}}/enrich
+Content-Type: application/json
+
+###
+
+###############################################################################
+# 4. Check Video State Transition (GET /api/v1/videos/{video_id})
+# Poll 2-5 seconds after step 3. Expect: status -> "analyzed", populated summary
+###############################################################################
+GET {{baseUrl}}/videos/{{videoId}}
+Content-Type: application/json
+
+###
+
+###############################################################################
+# 5. List Unlinked Videos (GET /api/v1/videos/unlinked)
+# Check videos ready to be linked to a case milestone
+###############################################################################
+GET {{baseUrl}}/videos/unlinked
+Content-Type: application/json

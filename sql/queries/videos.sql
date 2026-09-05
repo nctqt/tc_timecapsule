@@ -40,7 +40,7 @@ LIMIT 1;
 SELECT * 
 FROM videos
 WHERE milestone_id = $1 
-  AND status = 'approved'
+  AND status IN ('analyzed', 'approved')
 ORDER BY COALESCE(estimated_event_date, published_at) ASC;
 
 -- name: ListUnlinkedVideos :many

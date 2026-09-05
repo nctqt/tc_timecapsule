@@ -282,7 +282,7 @@ const listVideosByMilestone = `-- name: ListVideosByMilestone :many
 SELECT id, milestone_id, youtube_video_id, title, channel_name, description, published_at, created_at, updated_at, category, status, ai_summary, raw_transcript, estimated_event_date, transcript_processed_at, summary_source 
 FROM videos
 WHERE milestone_id = $1 
-  AND status = 'approved'
+  AND status IN ('analyzed', 'approved')
 ORDER BY COALESCE(estimated_event_date, published_at) ASC
 `
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nctqt/tc_timecapsule/internal/database"
+	"github.com/nctqt/tc_timecapsule/internal/jsonhelp"
 )
 
 type createMilestoneRequest struct {
@@ -20,19 +21,19 @@ func (cfg *apiConfig) handlerCreateMilestone(w http.ResponseWriter, r *http.Requ
 	caseID := r.PathValue("case_id")
 	caseUUID, err := uuid.Parse(caseID)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid id format", err)
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid id format", err)
 		return
 	}
 
 	var req createMilestoneRequest
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload", err)
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid request payload", err)
 		return
 	}
 
 	if req.Title == "" {
-		respondWithError(w, http.StatusBadRequest, "Title is required", nil)
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Title is required", nil)
 		return
 	}
 
@@ -59,53 +60,53 @@ func (cfg *apiConfig) handlerCreateMilestone(w http.ResponseWriter, r *http.Requ
 		UpdatedAt:     now,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Could not create case", err)
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not create case", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, newMilestone)
+	jsonhelp.RespondWithJSON(w, http.StatusCreated, newMilestone)
 }
 
 func (cfg *apiConfig) handlerListMilestonesByCase(w http.ResponseWriter, r *http.Request) {
 	caseID := r.PathValue("case_id")
 	caseUUID, err := uuid.Parse(caseID)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid id format", err)
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid id format", err)
 		return
 	}
 
 	milestones, err := cfg.queries.ListMilestonesByCase(r.Context(), caseUUID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Could not list milestones", err)
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not list milestones", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, milestones)
+	jsonhelp.RespondWithJSON(w, http.StatusOK, milestones)
 }
 
 func (cfg *apiConfig) handlerGetMilestoneByID(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("milestone_id")
 	UUID, err := uuid.Parse(id)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid id format", err)
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid id format", err)
 		return
 	}
 
 	milestone, err := cfg.queries.GetMilestoneByID(r.Context(), UUID)
-	respondWithJSON(w, http.StatusOK, milestone)
+	jsonhelp.RespondWithJSON(w, http.StatusOK, milestone)
 }
 
 func (cfg *apiConfig) handlerDeleteMilestone(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("milestone_id")
 	UUID, err := uuid.Parse(id)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid id format", err)
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid id format", err)
 		return
 	}
 
 	err = cfg.queries.DeleteMilestone(r.Context(), UUID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Could not delete milestone", err)
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not delete milestone", err)
 		return
 	}
 

@@ -11,20 +11,24 @@ import (
 	tc "github.com/nctqt/tc_timecapsule"
 	"github.com/nctqt/tc_timecapsule/internal/database"
 	"github.com/nctqt/tc_timecapsule/internal/openrouter"
+	"github.com/nctqt/tc_timecapsule/internal/worker"
 	"github.com/nctqt/tc_timecapsule/internal/youtube"
 	"github.com/pressly/goose/v3"
 )
 
 type apiConfig struct {
-	dbURL      string             // database url
-	db         *sql.DB            // db
-	queries    *database.Queries  // sqlc generated query handler
-	mux        *http.ServeMux     // http router
-	httpPort   string             // server port
-	httpHost   string             // server host
-	logFile    *os.File           // log file
-	openrouter *openrouter.Client // openrouter client
-	yt         *youtube.Client    // yt client
+	dbURL         string             // database url
+	db            *sql.DB            // db
+	queries       *database.Queries  // sqlc generated query handler
+	mux           *http.ServeMux     // http router
+	httpPort      string             // server port
+	httpHost      string             // server host
+	logFile       *os.File           // log file
+	openrouter    *openrouter.Client // openrouter client
+	openrouterKey string             // openrouter api key
+	yt            *youtube.Client    // yt client
+	ytKey         string             // api key
+	wp            *worker.WorkerPool // pool of bg workers
 }
 
 func initialConfig() *apiConfig {
@@ -57,6 +61,26 @@ func initialConfig() *apiConfig {
 	apiCfg.httpHost = os.Getenv("HTTP_HOST")
 	if apiCfg.httpHost == "" {
 		log.Fatal("HTTP_HOST env variable is required")
+	}
+	apiCfg.ytKey = os.Getenv("YT_API_KEY")
+	if apiCfg.ytKey == "" {
+		log.Fatal("YT_API_KEY environment variable is required")
+	}
+	apiCfg.openrouterKey = os.Getenv("OPENROUTER_API_KEY")
+	if apiCfg.openrouterKey == "" {
+		log.Fatal("OPENROUTER_API_KEY environment variable is required")
+	}
+
+	// yt client
+	apiCfg.yt, err = youtube.NewClient(apiCfg.ytKey)
+	if err != nil {
+		log.Fatalf("Error creating youtube client: %v", err)
+	}
+
+	// openrouter client
+	apiCfg.openrouter, err = openrouter.NewClient(apiCfg.openrouterKey)
+	if err != nil {
+		log.Fatalf("Error creating openrouter client: %v", err)
 	}
 
 	// db

@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/nctqt/tc_timecapsule/internal/jsonhelp"
 )
 
 type Client struct {
@@ -24,7 +26,7 @@ func NewClient(apiKey string) (*Client, error) {
 
 	// standard library client w/ timeout
 	lowLevelClient := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 60 * time.Second,
 	}
 
 	// our struct to hold the client plus the key
@@ -78,7 +80,7 @@ Respond ONLY with a valid JSON object matching this schema:
 `, input.Title, input.ChannelName, input.Description, transcriptContext)
 
 	payload := map[string]any{
-		"model": "google/gemini-2.0-flash-lite-001:free", // free openRouter model
+		"model": "openrouter/free", // free openRouter model
 		"messages": []map[string]string{
 			{"role": "user", "content": prompt},
 		},
@@ -131,9 +133,13 @@ Respond ONLY with a valid JSON object matching this schema:
 		return nil, fmt.Errorf("failed to parse openrouter response: %w", err)
 	}
 
+	// sanitize
+	rawContent := apiResult.Choices[0].Message.Content
+	cleanedContent := jsonhelp.CleanJSONOutput(rawContent)
+
 	// json -> struct
 	var analysis AnalysisResponse
-	err = json.Unmarshal([]byte(apiResult.Choices[0].Message.Content), &analysis)
+	err = json.Unmarshal([]byte(cleanedContent), &analysis)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal LLM JSON output: %w", err)
 	}

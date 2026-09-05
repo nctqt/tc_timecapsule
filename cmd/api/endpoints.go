@@ -28,6 +28,7 @@ func registerEndpoints(apiCfg *apiConfig) {
 
 	// video indexing endpoints
 	apiCfg.mux.HandleFunc("POST /api/v1/videos", apiCfg.handlerCreateVideo)
+	apiCfg.mux.HandleFunc("POST /api/v1/videos/{video_id}/enrich", apiCfg.handlerEnrichVideo)
 	apiCfg.mux.HandleFunc("GET /api/v1/videos/unlinked", apiCfg.handlerListUnlinkedVideos)
 	apiCfg.mux.HandleFunc("GET /api/v1/videos/{video_id}", apiCfg.handlerGetVideoByID)
 	apiCfg.mux.HandleFunc("GET /api/v1/milestones/{milestone_id}/videos", apiCfg.handlerListVideosByMilestone)
