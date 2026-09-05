@@ -63,7 +63,7 @@ func (cfg *apiConfig) handlerCreateMilestone(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, newMilestone)
+	respondWithJSON(w, http.StatusCreated, newMilestone)
 }
 
 func (cfg *apiConfig) handlerListMilestonesByCase(w http.ResponseWriter, r *http.Request) {

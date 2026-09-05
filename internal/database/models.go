@@ -5,6 +5,7 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,13 +31,20 @@ type Milestone struct {
 }
 
 type Video struct {
-	ID             uuid.UUID     `json:"id"`
-	MilestoneID    uuid.NullUUID `json:"milestone_id"`
-	YoutubeVideoID string        `json:"youtube_video_id"`
-	Title          string        `json:"title"`
-	ChannelName    string        `json:"channel_name"`
-	PublishedAt    time.Time     `json:"published_at"`
-	CreatedAt      time.Time     `json:"created_at"`
-	UpdatedAt      time.Time     `json:"updated_at"`
-	Category       string        `json:"category"`
+	ID                    uuid.UUID     `json:"id"`
+	MilestoneID           uuid.NullUUID `json:"milestone_id"`
+	YoutubeVideoID        string        `json:"youtube_video_id"`
+	Title                 string        `json:"title"`
+	ChannelName           string        `json:"channel_name"`
+	Description           string        `json:"description"`
+	PublishedAt           time.Time     `json:"published_at"`
+	CreatedAt             time.Time     `json:"created_at"`
+	UpdatedAt             time.Time     `json:"updated_at"`
+	Category              string        `json:"category"`
+	Status                string        `json:"status"`
+	AiSummary             *string       `json:"ai_summary"`
+	RawTranscript         *string       `json:"raw_transcript"`
+	EstimatedEventDate    sql.NullTime  `json:"estimated_event_date"`
+	TranscriptProcessedAt sql.NullTime  `json:"transcript_processed_at"`
+	SummarySource         string        `json:"summary_source"`
 }

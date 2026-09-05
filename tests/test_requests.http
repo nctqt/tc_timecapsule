@@ -1,0 +1,37 @@
+### 1. Create a Case
+POST http://localhost:8080/api/v1/cases
+Content-Type: application/json
+
+{
+  "title": "Watts Family Case",
+  "description": "True crime media tracking and timeline indexing"
+}
+
+###
+
+### 2. Create a Milestone for the Case
+# Replace YOUR_CASE_ID_HERE with the 'id' returned from Request 1
+POST http://localhost:8080/api/v1/cases/0314d94e-9b17-483f-8137-8a4188b54185/milestones
+Content-Type: application/json
+
+{
+  "title": "Initial Investigation & Media Coverage",
+  "description": "Coverage of early search efforts and timeline setup",
+  "event_date": "2018-08-13T00:00:00Z"
+}
+
+###
+
+### 3. Create a Video linked to the Milestone
+# Replace YOUR_MILESTONE_ID_HERE with the 'id' returned from Request 2
+POST http://localhost:8080/api/v1/videos
+Content-Type: application/json
+
+{
+  "milestone_id": "cd3df64e-2186-4b72-ae01-d2c0c6578cef",
+  "youtube_video_id": "dQw4w9WgXcQ",
+  "title": "Test True Crime Ingestion Video",
+  "channel_name": "Crime Archive",
+  "published_at": "2026-01-15T10:00:00Z",
+  "category": "news"
+}

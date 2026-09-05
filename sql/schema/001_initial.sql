@@ -24,6 +24,7 @@ CREATE TABLE videos (
     youtube_video_id VARCHAR(50) UNIQUE NOT NULL,
     title VARCHAR(255) NOT NULL,
     channel_name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     published_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,

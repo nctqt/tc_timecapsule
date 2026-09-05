@@ -10,17 +10,21 @@ import (
 	"github.com/joho/godotenv"
 	tc "github.com/nctqt/tc_timecapsule"
 	"github.com/nctqt/tc_timecapsule/internal/database"
+	"github.com/nctqt/tc_timecapsule/internal/openrouter"
+	"github.com/nctqt/tc_timecapsule/internal/youtube"
 	"github.com/pressly/goose/v3"
 )
 
 type apiConfig struct {
-	dbURL    string            // database url
-	db       *sql.DB           // db
-	queries  *database.Queries // sqlc generated query handler
-	mux      *http.ServeMux    // http router
-	httpPort string            // server port
-	httpHost string            // server host
-	logFile  *os.File          // log file
+	dbURL      string             // database url
+	db         *sql.DB            // db
+	queries    *database.Queries  // sqlc generated query handler
+	mux        *http.ServeMux     // http router
+	httpPort   string             // server port
+	httpHost   string             // server host
+	logFile    *os.File           // log file
+	openrouter *openrouter.Client // openrouter client
+	yt         *youtube.Client    // yt client
 }
 
 func initialConfig() *apiConfig {

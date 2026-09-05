@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nctqt/tc_timecapsule/internal/database"
+	"github.com/nctqt/tc_timecapsule/internal/openrouter"
 )
 
 type CreateVideoRequest struct {
@@ -74,13 +76,14 @@ func (cfg *apiConfig) handlerCreateVideo(w http.ResponseWriter, r *http.Request)
 		CreatedAt:      now,
 		UpdatedAt:      now,
 		Category:       req.Category,
+		Status:         "pending_review", // default status
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not create video", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, newVideo)
+	respondWithJSON(w, http.StatusCreated, newVideo)
 }
 
 func (cfg *apiConfig) handlerListUnlinkedVideos(w http.ResponseWriter, r *http.Request) {
@@ -185,4 +188,88 @@ func (cfg *apiConfig) handlerUnlinkVideoFromMilestone(w http.ResponseWriter, r *
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
+}
+
+type ingestVideoRequest struct {
+	MilestoneID    uuid.UUID `json:"milestone_id"`
+	YoutubeVideoID string    `json:"youtube_video_id"`
+	Title          string    `json:"title"`
+	ChannelName    string    `json:"channel_name"`
+	Description    string    `json:"description"`
+	RawTranscript  *string   `json:"raw_transcript,omitempty"`
+	PublishedAt    time.Time `json:"published_at"`
+}
+
+func (cfg *apiConfig) handlerEnrichVideo(w http.ResponseWriter, r *http.Request) {
+	// path value
+	videoIDStr := r.PathValue("video_id")
+	videoID, err := uuid.Parse(videoIDStr)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid video ID format", err)
+		return
+	}
+
+	// fetch raw video metadata from db
+	video, err := cfg.queries.GetVideoByID(r.Context(), videoID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			respondWithError(w, http.StatusNotFound, "Video not found", err)
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "Database error retrieving video", err)
+		return
+	}
+
+	// extract transcript if stored
+	transcriptText := ""
+	if video.RawTranscript != nil {
+		transcriptText = *video.RawTranscript
+	}
+
+	// prepare request for openrouter
+	analysisReq := openrouter.AnalysisRequest{
+		Title:         video.Title,
+		Description:   video.Description,
+		ChannelName:   video.ChannelName,
+		RawTranscript: transcriptText,
+	}
+
+	// call openrouter client for ai summary and category extraction
+	aiResult, err := cfg.openrouter.AnalyzeVideo(r.Context(), analysisReq)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "OpenRouter enrichment failed", err)
+		return
+	}
+
+	// parse estimated time
+	var estimatedEventDate sql.NullTime
+	if aiResult.EstimatedEventDate != "" {
+		parsedDate, err := time.Parse("2006-01-02", aiResult.EstimatedEventDate)
+		if err == nil {
+			estimatedEventDate = sql.NullTime{Time: parsedDate, Valid: true}
+		}
+	}
+
+	now := time.Now().UTC()
+	category := aiResult.Category
+	if category == "" {
+		category = "uncategorized"
+	}
+
+	// send to db
+	updatedVideo, err := cfg.queries.UpdateVideoAnalysis(r.Context(), database.UpdateVideoAnalysisParams{
+		ID:                 video.ID,
+		Category:           category,
+		AiSummary:          &aiResult.Summary,
+		EstimatedEventDate: estimatedEventDate,
+		SummarySource:      aiResult.SummarySource,
+		Status:             "analyzed", // transitions state: pending_review -> analyzed
+		UpdatedAt:          now,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to enrich video", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusCreated, updatedVideo)
 }
