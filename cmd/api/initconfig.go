@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	tc "github.com/nctqt/tc_timecapsule"
@@ -29,6 +30,7 @@ type apiConfig struct {
 	yt            *youtube.Client    // yt client
 	ytKey         string             // api key
 	wp            *worker.WorkerPool // pool of bg workers
+	jwtSecret     string             // jwt key
 }
 
 func initialConfig() *apiConfig {
@@ -44,10 +46,7 @@ func initialConfig() *apiConfig {
 	log.SetOutput(multiWriter)
 
 	// env
-	err = godotenv.Load(".env")
-	if err != nil {
-		log.Fatalf("Error loading env: %v", err)
-	}
+	_ = godotenv.Load(".env")
 
 	// config env vars
 	apiCfg.dbURL = os.Getenv("DATABASE_URL")
@@ -70,6 +69,10 @@ func initialConfig() *apiConfig {
 	if apiCfg.openrouterKey == "" {
 		log.Fatal("OPENROUTER_API_KEY environment variable is required")
 	}
+	apiCfg.jwtSecret = os.Getenv("JWT_SECRET")
+	if apiCfg.jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is required")
+	}
 
 	// yt client
 	apiCfg.yt, err = youtube.NewClient(apiCfg.ytKey)
@@ -89,6 +92,9 @@ func initialConfig() *apiConfig {
 	if err != nil {
 		log.Fatalf("Error opening db: %v", err)
 	}
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(5 * time.Minute)
 	apiCfg.db = db
 
 	// verify connection

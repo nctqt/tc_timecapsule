@@ -1,0 +1,57 @@
+### Variables
+@host = http://localhost:8080
+@email = testuser@example.com
+@password = Password123!
+
+### 1. Register User
+POST {{host}}/api/v1/users/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 2. Login User
+# @name login
+POST {{host}}/api/v1/users/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Paste JWT token from Login response below:
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0Y190aW1lY2Fwc3VsZSIsInN1YiI6Ijk3NzhiMTExLTZhNjItNDJjMC1iZGVmLThkNTQwZjllNWFmZiIsImV4cCI6MTc4ODgyNjI4OCwiaWF0IjoxNzg4NzM5ODg4fQ.7jcwy4isV89jr7BSFQmp82gwj07OX7t6gSwB4O213Ms
+
+
+
+### 3. Create a Video (Seed DB)
+# @name createVideo
+POST {{host}}/api/v1/videos
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+}
+
+### Paste the video ID returned from Step 3 below:
+@videoId = f02020af-82af-465e-b540-2a9c09d243f5
+
+
+### 4. Record Video Watch
+POST {{host}}/api/v1/watch
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "video_id": "{{videoId}}",
+  "completed": true
+}
+
+
+### 5. Get Watch History
+GET {{host}}/api/v1/watch/history
+Authorization: Bearer {{authToken}}

@@ -13,7 +13,11 @@ CREATE INDEX idx_videos_transcript_pending
     ON videos(id) 
     WHERE transcript_processed_at IS NULL AND raw_transcript IS NOT NULL;
 
+CREATE INDEX idx_videos_milestone_status_event_date 
+ON videos (milestone_id, status, COALESCE(estimated_event_date, published_at) ASC);
+
 -- +goose Down
+DROP INDEX IF EXISTS idx_videos_milestone_status_event_date;
 DROP INDEX IF EXISTS idx_videos_transcript_pending;
 DROP INDEX IF EXISTS idx_videos_status;
 

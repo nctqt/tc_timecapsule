@@ -23,13 +23,13 @@ func main() {
 	defer apiCfg.logFile.Close()
 	defer apiCfg.db.Close()
 
-	// api
-	registerEndpoints(apiCfg)
-
 	// bg worker pool
 	workerCount := 3
 	queueCapacity := 100
 	apiCfg.wp = worker.NewWorkerPool(queueCapacity, apiCfg.processVideoEnrichment)
+
+	// api
+	registerEndpoints(apiCfg)
 
 	// start worker pool
 	apiCfg.wp.Start(ctx, workerCount)

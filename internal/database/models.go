@@ -30,6 +30,14 @@ type Milestone struct {
 	DatePrecision string    `json:"date_precision"`
 }
 
+type User struct {
+	ID             uuid.UUID `json:"id"`
+	Email          string    `json:"email"`
+	HashedPassword string    `json:"hashed_password"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
 type Video struct {
 	ID                    uuid.UUID     `json:"id"`
 	MilestoneID           uuid.NullUUID `json:"milestone_id"`
@@ -47,4 +55,12 @@ type Video struct {
 	EstimatedEventDate    sql.NullTime  `json:"estimated_event_date"`
 	TranscriptProcessedAt sql.NullTime  `json:"transcript_processed_at"`
 	SummarySource         string        `json:"summary_source"`
+}
+
+type WatchHistory struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	VideoID   uuid.UUID `json:"video_id"`
+	WatchedAt time.Time `json:"watched_at"`
+	Completed bool      `json:"completed"`
 }

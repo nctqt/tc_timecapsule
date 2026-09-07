@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -60,7 +62,7 @@ func (cfg *apiConfig) handlerCreateMilestone(w http.ResponseWriter, r *http.Requ
 		UpdatedAt:     now,
 	})
 	if err != nil {
-		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not create case", err)
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not create milestone", err)
 		return
 	}
 
@@ -93,6 +95,14 @@ func (cfg *apiConfig) handlerGetMilestoneByID(w http.ResponseWriter, r *http.Req
 	}
 
 	milestone, err := cfg.queries.GetMilestoneByID(r.Context(), UUID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			jsonhelp.RespondWithError(w, http.StatusNotFound, "Milestone not found", err)
+			return
+		}
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not retrieve milestone", err)
+		return
+	}
 	jsonhelp.RespondWithJSON(w, http.StatusOK, milestone)
 }
 
@@ -110,7 +120,5 @@ func (cfg *apiConfig) handlerDeleteMilestone(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	w.WriteHeader(http.StatusNoContent)
 }
