@@ -12,6 +12,7 @@ import (
 	tc "github.com/nctqt/tc_timecapsule"
 	"github.com/nctqt/tc_timecapsule/internal/database"
 	"github.com/nctqt/tc_timecapsule/internal/openrouter"
+	"github.com/nctqt/tc_timecapsule/internal/transcript"
 	"github.com/nctqt/tc_timecapsule/internal/worker"
 	"github.com/nctqt/tc_timecapsule/internal/youtube"
 	"github.com/pressly/goose/v3"
@@ -31,6 +32,7 @@ type apiConfig struct {
 	ytKey         string             // api key
 	wp            *worker.WorkerPool // pool of bg workers
 	jwtSecret     string             // jwt key
+	transcript    *transcript.Client // transcript client
 }
 
 func initialConfig() *apiConfig {
@@ -85,6 +87,9 @@ func initialConfig() *apiConfig {
 	if err != nil {
 		log.Fatalf("Error creating openrouter client: %v", err)
 	}
+
+	// transcript client
+	apiCfg.transcript = transcript.NewClient()
 
 	// db
 	log.Println("Connecting to PostgreSQL...")

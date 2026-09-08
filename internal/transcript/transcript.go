@@ -1,11 +1,5 @@
 package transcript
 
-// heavily relied on ai for this one
-// it's finding text, and cleaning it
-// the text is in very specific formats and needs to be cleaned,
-// stripped, de-duped, and tags stripped many times
-// this was just a pure time saver
-
 import (
 	"context"
 	"errors"
@@ -13,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -20,9 +15,9 @@ import (
 var (
 	ErrNoTranscriptFound = errors.New("no transcript available for this video")
 
-	// regex matching WebVTT timestamp lines (e.g. 00:01:20.500 --> 00:01:23.000)
+	// Regex matching WebVTT timestamp lines (e.g. 00:01:20.500 --> 00:01:23.000)
 	vttTimestampRegex = regexp.MustCompile(`(?m)^\d{2}:\d{2}(:\d{2})?\.\d{3}\s+-->\s+\d{2}:\d{2}(:\d{2})?\.\d{3}.*$\n?`)
-	// regex matching WebVTT header tags, positioning rules, or XML tags like <c> text </c>
+	// Regex matching WebVTT header tags, positioning rules, or XML tags like <c> text </c>
 	vttTagRegex = regexp.MustCompile(`<[^>]*>`)
 )
 
@@ -38,20 +33,18 @@ func NewClient() *Client {
 	}
 }
 
-// fetchTranscript attempts to retrieve and clean captions for a given YouTube video ID.
+// FetchTranscript attempts to retrieve and clean captions for a given YouTube video ID.
 func (c *Client) FetchTranscript(ctx context.Context, videoID string) (string, error) {
 	if strings.TrimSpace(videoID) == "" {
 		return "", errors.New("videoID cannot be empty")
 	}
 
-	// fetch video page content to extract timedtext caption tracks
 	pageURL := fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pageURL, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// user-Agent required to avoid basic bot blocking
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 
@@ -70,18 +63,15 @@ func (c *Client) FetchTranscript(ctx context.Context, videoID string) (string, e
 		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	// locate timedtext caption URL in page metadata
 	captionURL := extractCaptionURL(string(bodyBytes))
 	if captionURL == "" {
 		return "", ErrNoTranscriptFound
 	}
 
-	// force WebVTT output format from YouTube timedtext endpoint
 	if !strings.Contains(captionURL, "fmt=") {
 		captionURL += "&fmt=vtt"
 	}
 
-	// fetch raw VTT content
 	vttReq, err := http.NewRequestWithContext(ctx, http.MethodGet, captionURL, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create caption request: %w", err)
@@ -102,7 +92,6 @@ func (c *Client) FetchTranscript(ctx context.Context, videoID string) (string, e
 		return "", fmt.Errorf("failed to read caption body: %w", err)
 	}
 
-	// parse, strip timestamps/tags, and deduplicate line cues
 	cleanText := CleanVTT(string(vttBytes))
 	if strings.TrimSpace(cleanText) == "" {
 		return "", ErrNoTranscriptFound
@@ -111,7 +100,6 @@ func (c *Client) FetchTranscript(ctx context.Context, videoID string) (string, e
 	return cleanText, nil
 }
 
-// searches YouTube's initial player response JSON for standard caption tracks.
 func extractCaptionURL(html string) string {
 	idx := strings.Index(html, `"captionTracks":`)
 	if idx == -1 {
@@ -131,13 +119,11 @@ func extractCaptionURL(html string) string {
 	}
 
 	rawURL := sub[start : start+end]
-	// Unescape Unicode sequence delimiters (\u0026 -> &)
 	return strings.ReplaceAll(rawURL, `\u0026`, "&")
 }
 
-// strips WebVTT headers, timecodes, XML tags, and deduplicates repeating lines.
+// CleanVTT strips WebVTT headers, timecodes, XML tags, numeric cue IDs, and deduplicates repeating lines.
 func CleanVTT(vtt string) string {
-	// remove WEBVTT header, NOTE comments, and Kind declarations
 	lines := strings.Split(vtt, "\n")
 	var filteredLines []string
 
@@ -161,15 +147,15 @@ func CleanVTT(vtt string) string {
 	// Strip XML inline tags (e.g. <c>text</c> or <00:00:01.500>)
 	cleaned = vttTagRegex.ReplaceAllString(cleaned, "")
 
-	// Split back into lines for text deduplication
 	rawLines := strings.Split(cleaned, "\n")
 	var finalLines []string
 	var lastLine string
 
 	for _, line := range rawLines {
 		t := strings.TrimSpace(line)
-		// Skip empty lines, numeric sequence counters, and repeated caption cues
-		if t == "" || t == lastLine {
+
+		// Skip empty lines or pure integer sequence markers
+		if t == "" || isInteger(t) || t == lastLine {
 			continue
 		}
 
@@ -186,4 +172,9 @@ func CleanVTT(vtt string) string {
 	}
 
 	return fullTranscript
+}
+
+func isInteger(s string) bool {
+	_, err := strconv.Atoi(s)
+	return err == nil
 }

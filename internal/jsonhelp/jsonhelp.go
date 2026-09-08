@@ -25,11 +25,11 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload any) {
 	}
 }
 
-// strips markdown code block fences and leading non-JSON text
+// CleanJSONOutput strips markdown code block fences and isolates raw JSON objects.
 func CleanJSONOutput(raw string) string {
 	cleaned := strings.TrimSpace(raw)
 
-	// Strip markdown fences
+	// Strip markdown code fences
 	if strings.HasPrefix(cleaned, "```") {
 		if idx := strings.Index(cleaned, "\n"); idx != -1 {
 			cleaned = cleaned[idx+1:]
@@ -38,15 +38,24 @@ func CleanJSONOutput(raw string) string {
 	cleaned = strings.TrimSuffix(cleaned, "```")
 	cleaned = strings.TrimSpace(cleaned)
 
-	// Trim leading non-JSON text up to the first '{'
-	if startIdx := strings.Index(cleaned, "{"); startIdx != -1 {
-		cleaned = cleaned[startIdx:]
+	startIdx := strings.Index(cleaned, "{")
+	if startIdx == -1 {
+		return cleaned
 	}
 
-	// Trim trailing non-JSON text after the last '}'
-	if endIdx := strings.LastIndex(cleaned, "}"); endIdx != -1 && endIdx > strings.Index(cleaned, "{") {
-		cleaned = cleaned[:endIdx+1]
+	endIdx := strings.LastIndex(cleaned, "}")
+	if endIdx == -1 || endIdx < startIdx {
+		return cleaned[startIdx:]
 	}
 
-	return cleaned
+	extracted := strings.TrimSpace(cleaned[startIdx : endIdx+1])
+
+	// Verify if extracted string is valid JSON
+	var js json.RawMessage
+	if json.Unmarshal([]byte(extracted), &js) != nil {
+		// If unmarshaling fails due to truncation within the object, return original raw output
+		return cleaned
+	}
+
+	return extracted
 }

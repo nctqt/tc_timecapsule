@@ -80,3 +80,9 @@ WHERE raw_transcript IS NOT NULL
   AND transcript_processed_at IS NULL
 ORDER BY created_at ASC
 LIMIT $1;
+
+-- name: UpdateVideoTranscript :exec
+UPDATE videos
+SET raw_transcript = $2,
+    updated_at = $3
+WHERE id = $1;

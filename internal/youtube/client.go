@@ -37,7 +37,7 @@ func NewClient(apiKey string) (*Client, error) {
 
 	// standard library client w/ timeout
 	lowLevelClient := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 3 * time.Second,
 	}
 
 	// our struct to hold the client plus the key

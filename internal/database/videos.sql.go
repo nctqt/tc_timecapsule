@@ -415,3 +415,21 @@ func (q *Queries) UpdateVideoStatus(ctx context.Context, arg UpdateVideoStatusPa
 	_, err := q.db.ExecContext(ctx, updateVideoStatus, arg.ID, arg.Status, arg.UpdatedAt)
 	return err
 }
+
+const updateVideoTranscript = `-- name: UpdateVideoTranscript :exec
+UPDATE videos
+SET raw_transcript = $2,
+    updated_at = $3
+WHERE id = $1
+`
+
+type UpdateVideoTranscriptParams struct {
+	ID            uuid.UUID `json:"id"`
+	RawTranscript *string   `json:"raw_transcript"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+func (q *Queries) UpdateVideoTranscript(ctx context.Context, arg UpdateVideoTranscriptParams) error {
+	_, err := q.db.ExecContext(ctx, updateVideoTranscript, arg.ID, arg.RawTranscript, arg.UpdatedAt)
+	return err
+}

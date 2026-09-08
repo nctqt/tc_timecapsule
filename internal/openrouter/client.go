@@ -70,6 +70,7 @@ Channel Name: %s
 Description: %s
 Transcript: %s
 
+Do NOT include markdown formatting, code blocks, or preamble text.
 Respond ONLY with a valid JSON object matching this schema:
 {
   "category": "primary_source | news_report | commentary | legal_analysis",

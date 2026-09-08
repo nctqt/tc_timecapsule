@@ -1,11 +1,9 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -15,8 +13,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nctqt/tc_timecapsule/internal/database"
 	"github.com/nctqt/tc_timecapsule/internal/jsonhelp"
-	"github.com/nctqt/tc_timecapsule/internal/openrouter"
-	"github.com/nctqt/tc_timecapsule/internal/worker"
 )
 
 type CreateVideoRequest struct {
@@ -184,192 +180,4 @@ func (cfg *apiConfig) handlerUnlinkVideoFromMilestone(w http.ResponseWriter, r *
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (cfg *apiConfig) processVideoEnrichment(ctx context.Context, videoID uuid.UUID) (err error) {
-	// if there is an error during enrichment, mark video as failed
-	defer func() {
-		if err != nil {
-			log.Printf("[Worker] Marking video %s as failed due to error: %v", videoID, err)
-			failErr := cfg.queries.UpdateVideoStatus(ctx, database.UpdateVideoStatusParams{
-				ID:        videoID,
-				Status:    "failed",
-				UpdatedAt: time.Now().UTC(),
-			})
-			if failErr != nil {
-				log.Printf("[Worker] Failed to set status='failed' for video %s: %v", videoID, failErr)
-			}
-		}
-	}()
-
-	// fetch raw video metadata from db
-	video, err := cfg.queries.GetVideoByID(ctx, videoID)
-	if err != nil {
-		return fmt.Errorf("get video by id: %w", err)
-	}
-
-	// extract transcript if stored
-	transcriptText := ""
-	if video.RawTranscript != nil {
-		transcriptText = *video.RawTranscript
-	}
-
-	// prepare request for openrouter
-	analysisReq := openrouter.AnalysisRequest{
-		Title:         video.Title,
-		Description:   video.Description,
-		ChannelName:   video.ChannelName,
-		RawTranscript: transcriptText,
-	}
-
-	// call openrouter client for ai summary and category extraction
-	aiResult, err := cfg.openrouter.AnalyzeVideo(ctx, analysisReq)
-	if err != nil {
-		return fmt.Errorf("openrouter analyze failed: %w", err)
-	}
-
-	// parse estimated time
-	var estimatedEventDate sql.NullTime
-	if aiResult.EstimatedEventDate != "" {
-		parsedDate, err := time.Parse("2006-01-02", aiResult.EstimatedEventDate)
-		if err == nil {
-			estimatedEventDate = sql.NullTime{Time: parsedDate, Valid: true}
-		}
-	}
-
-	now := time.Now().UTC()
-	category := aiResult.Category
-	if category == "" {
-		category = "uncategorized"
-	}
-
-	// send to db
-	_, err = cfg.queries.UpdateVideoAnalysis(ctx, database.UpdateVideoAnalysisParams{
-		ID:                 video.ID,
-		Category:           category,
-		AiSummary:          &aiResult.Summary,
-		EstimatedEventDate: estimatedEventDate,
-		SummarySource:      aiResult.SummarySource,
-		Status:             "analyzed", // transitions state: pending_review -> analyzed
-		UpdatedAt:          now,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to update video analysis: %w", err)
-	}
-
-	return nil
-}
-
-func (cfg *apiConfig) handlerEnrichVideo(w http.ResponseWriter, r *http.Request) {
-	videoIDStr := r.PathValue("video_id")
-	videoID, err := uuid.Parse(videoIDStr)
-	if err != nil {
-		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid video ID format", err)
-		return
-	}
-
-	// optional quick check: ensure video exists before queuing
-	_, err = cfg.queries.GetVideoByID(r.Context(), videoID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			jsonhelp.RespondWithError(w, http.StatusNotFound, "Video not found", err)
-			return
-		}
-		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Database error retrieving video", err)
-		return
-	}
-
-	// enqueue the job for the worker pool
-	enqueued := cfg.wp.Enqueue(worker.Task{VideoID: videoID})
-	if !enqueued {
-		jsonhelp.RespondWithError(w, http.StatusServiceUnavailable, "Enrichment queue is full", nil)
-		return
-	}
-
-	// immediate 202 response
-	jsonhelp.RespondWithJSON(w, http.StatusAccepted, map[string]string{
-		"message":  "Video enrichment enqueued successfully",
-		"video_id": videoID.String(),
-		"status":   "pending_review",
-	})
-}
-
-type RecordVideoWatchResponse struct {
-	ID          uuid.UUID `json:"id"`
-	UserID      uuid.UUID `json:"user_id"`
-	VideoID     uuid.UUID `json:"video_id"`
-	ProgressSec int       `json:"progress_seconds"`
-	IsCompleted bool      `json:"is_completed"`
-	WatchedAt   time.Time `json:"watched_at"`
-}
-
-type RecordVideoWatchRequest struct {
-	VideoID   uuid.UUID `json:"video_id"`
-	Completed bool      `json:"completed"`
-}
-
-type contextKey string
-
-const userIDContextKey contextKey = "userID"
-
-func (cfg *apiConfig) handlerRecordVideoWatch(w http.ResponseWriter, r *http.Request) {
-	// extract authenticated userID from context
-	userID, ok := r.Context().Value(userIDContextKey).(uuid.UUID)
-	if !ok {
-		jsonhelp.RespondWithError(w, http.StatusUnauthorized, "Unauthorized", nil)
-		return
-	}
-
-	// decode request body
-	var req RecordVideoWatchRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid request payload", err)
-		return
-	}
-
-	// validate input
-	if req.VideoID == uuid.Nil {
-		jsonhelp.RespondWithError(w, http.StatusBadRequest, "video_id is required", nil)
-		return
-	}
-
-	// record watch state via sqlc query
-	watchRecord, err := cfg.queries.RecordVideoWatch(r.Context(), database.RecordVideoWatchParams{
-		ID:        uuid.New(),
-		UserID:    userID,
-		VideoID:   req.VideoID,
-		WatchedAt: time.Now().UTC(),
-		Completed: req.Completed,
-	})
-	if err != nil {
-		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not record watch state", err)
-		return
-	}
-
-	// return created/updated record
-	jsonhelp.RespondWithJSON(w, http.StatusOK, watchRecord)
-}
-
-func (cfg *apiConfig) handlerGetWatchHistory(w http.ResponseWriter, r *http.Request) {
-	// extract authenticated userID from context
-	userID, ok := r.Context().Value(userIDContextKey).(uuid.UUID)
-	if !ok {
-		jsonhelp.RespondWithError(w, http.StatusUnauthorized, "Unauthorized access", nil)
-		return
-	}
-
-	// fetch watch history join records from DB
-	history, err := cfg.queries.GetWatchHistoryByUserID(r.Context(), userID)
-	if err != nil {
-		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not fetch watch history", err)
-		return
-	}
-
-	// ensure we return an empty JSON array [] rather than null if empty
-	if history == nil {
-		history = []database.GetWatchHistoryByUserIDRow{}
-	}
-
-	// respond with the history items
-	jsonhelp.RespondWithJSON(w, http.StatusOK, history)
 }
