@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const createVideo = `-- name: CreateVideo :one
@@ -278,16 +279,16 @@ func (q *Queries) ListUnlinkedVideos(ctx context.Context) ([]Video, error) {
 	return items, nil
 }
 
-const listVideosByMilestone = `-- name: ListVideosByMilestone :many
+const listVideosByMilestoneIDs = `-- name: ListVideosByMilestoneIDs :many
 SELECT id, milestone_id, youtube_video_id, title, channel_name, description, published_at, created_at, updated_at, category, status, ai_summary, raw_transcript, estimated_event_date, transcript_processed_at, summary_source 
 FROM videos
-WHERE milestone_id = $1 
+WHERE milestone_id = ANY($1::uuid[])
   AND status IN ('analyzed', 'approved')
 ORDER BY COALESCE(estimated_event_date, published_at) ASC
 `
 
-func (q *Queries) ListVideosByMilestone(ctx context.Context, milestoneID uuid.NullUUID) ([]Video, error) {
-	rows, err := q.db.QueryContext(ctx, listVideosByMilestone, milestoneID)
+func (q *Queries) ListVideosByMilestoneIDs(ctx context.Context, milestoneIds []uuid.UUID) ([]Video, error) {
+	rows, err := q.db.QueryContext(ctx, listVideosByMilestoneIDs, pq.Array(milestoneIds))
 	if err != nil {
 		return nil, err
 	}

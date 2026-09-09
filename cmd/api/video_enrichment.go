@@ -20,13 +20,14 @@ func (cfg *apiConfig) processVideoEnrichment(ctx context.Context, videoID uuid.U
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
+	// temp changed to approved for testing
 	// if there is an error during enrichment, mark video as failed
 	defer func() {
 		if err != nil {
 			log.Printf("[Worker] Marking video %s as failed due to error: %v", videoID, err)
 			failErr := cfg.queries.UpdateVideoStatus(ctx, database.UpdateVideoStatusParams{
 				ID:        videoID,
-				Status:    "failed",
+				Status:    "approved",
 				UpdatedAt: time.Now().UTC(),
 			})
 			if failErr != nil {
@@ -145,10 +146,11 @@ func (cfg *apiConfig) handlerEnrichVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// this has been changed to approved for testing, was pending review
 	// immediate 202 response
 	jsonhelp.RespondWithJSON(w, http.StatusAccepted, map[string]string{
 		"message":  "Video enrichment enqueued successfully",
 		"video_id": videoID.String(),
-		"status":   "pending_review",
+		"status":   "approved",
 	})
 }

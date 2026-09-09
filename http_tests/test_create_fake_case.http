@@ -1,0 +1,198 @@
+# in case of db destruction, create testing data.   -    ALSO NEED TO MAKE A FILE THAT TESTS ALL ENDPONT FUNCTIONS
+
+# creates a case
+# with 5 milestones
+# with 5 videos per milestone
+# all videos marked as approved for now
+
+### Variables
+@host = http://localhost:8080
+@email = testuser@example.com
+@password = Password123!
+
+@case1 = 'The Chris Watts Case'
+@description1 = 'Family Annihilator'
+
+@milestone1 = 'Day of Incident'
+@milestone2 = 'Family Missing'
+@milestone3 = 'Porch Interview'
+@milestone4 = 'Interrogation and Confession'
+@milestone5 = 'Court Proceedings'
+
+@video1 = https://www.youtube.com/watch?v=Xfg861hO-Ag
+@video2 = https://www.youtube.com/watch?v=F7rA9ksL_eQ
+@video3 = https://www.youtube.com/watch?v=dSI_5IuhsHI
+@video4 = https://www.youtube.com/watch?v=uVC6WWT-awA
+@video5 = https://www.youtube.com/watch?v=QMwTBOc-imk
+@video6 = https://www.youtube.com/watch?v=nEPc56k_v18
+@video7 = https://www.youtube.com/watch?v=_3h-siyefAU
+@video8 = https://www.youtube.com/watch?v=NB8nVk-5eh8
+@video9 = https://www.youtube.com/watch?v=l7hQdKwqcSw
+@video10 = https://www.youtube.com/watch?v=yS3k_Inm45Q
+@video11 = https://www.youtube.com/watch?v=mpJ9cHb9OtQ&t=5553s
+@video12 = https://www.youtube.com/watch?v=9YejMvri8cI
+@video13 = https://www.youtube.com/watch?v=ubzoRCjSQWQ
+@video14 = https://www.youtube.com/watch?v=CugmDXYX7P8
+@video15 = https://www.youtube.com/watch?v=gKYS_mcYnxo
+@video16 = https://www.youtube.com/watch?v=knIFw15savQ&t=2665s
+@video17 = https://www.youtube.com/watch?v=E8yPWbKYdXA
+@video18 = https://www.youtube.com/watch?v=4F616VP9XQI
+@video19 = https://www.youtube.com/watch?v=knIFw15savQ
+@video20 = https://www.youtube.com/watch?v=rNKvztGnrzI
+@video21 = https://www.youtube.com/watch?v=0bZfX0_70Ms&t=2184s
+@video22 = https://www.youtube.com/watch?v=h2MAGQ0meFs
+@video23 = https://www.youtube.com/watch?v=x8h3N_5nul8
+@video24 = https://www.youtube.com/watch?v=cqQtzHfZejI&t=264s
+@video25 = https://www.youtube.com/watch?v=8XNwWhWtRwg&t=1426s
+
+### 1. Register User
+# @name register
+POST {{host}}/api/v1/users/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 2. Login User
+# @name login
+POST {{host}}/api/v1/users/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Read JWT token dynamically from login response:
+@authToken = {{login.response.body.token}}
+
+### Create a Case
+# @name createCase
+POST {{host}}/api/v1/cases
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "Title": "{{case1}}",
+  "Description": "family annihilator"
+}
+
+### get case uuid
+@caseId = {{createCase.response.body.id}}
+
+### Create Milestone (also attaches it to a case)
+POST {{host}}/api/v1/cases/{{caseId}}/milestones
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Disappearance Reported",
+  "description": "Shanann Watts reported missing by her friend Nickole Atkinson after missed doctor appointments.",
+  "date_precision": "day"
+  "event_date": "2018-08-13T12:00:00Z"
+}
+
+
+
+
+
+
+
+
+
+
+
+### 3. Create a Video (Seed DB)
+# @name createVideo
+POST {{host}}/api/v1/videos
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+}
+
+### Read video ID dynamically from createVideo response:
+@videoId = {{createVideo.response.body.id}}
+
+### 4. Enrich Video
+# @name enrichVideo
+POST {{host}}/api/v1/videos/{{videoId}}/enrich
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "Title": "the chris watts case",
+  "Description": "family annihilator"
+}
+
+### 5. Create a Case
+
+
+### Read case ID dynamically from createCase response:
+
+
+### 6. Attach Milestone to Case
+# @name createMilestone
+POST {{host}}/api/v1/cases/{{caseId}}/milestones
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Disappearance Reported",
+  "description": "Shanann Watts reported missing by her friend Nickole Atkinson after missed doctor appointments.",
+  "event_date": "2018-08-13T12:00:00Z"
+}
+
+### Read milestone ID dynamically from createMilestone response:
+@milestoneId = {{createMilestone.response.body.id}}
+
+### 7. List Unlinked Videos
+GET {{host}}/api/v1/videos/unlinked
+Authorization: Bearer {{authToken}}
+
+### 8. List Linked Videos
+GET {{host}}/api/v1/videos/linked
+Authorization: Bearer {{authToken}}
+
+### 9. Get Cases
+GET {{host}}/api/v1/cases
+Authorization: Bearer {{authToken}}
+
+### 10. Get Milestones for Case
+GET {{host}}/api/v1/cases/{{caseId}}/milestones
+Authorization: Bearer {{authToken}}
+
+### 11. Attach Video to Milestone
+PUT {{host}}/api/v1/milestones/{{milestoneId}}/videos/{{videoId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "youtube_video_id": "dQw4w9WgXcQ",
+  "title": "Police Bodycam: Initial Welfare Check",
+  "channel_name": "True Crime Recaps",
+  "status": "analyzed",
+  "summary": "Officer arrival at the residence, initial walkthrough with Chris Watts, and early neighborhood canvassing.",
+  "category": "Bodycam"
+}
+
+### 12. Get Videos by Milestone
+GET {{host}}/api/v1/milestones/{{milestoneId}}/videos
+Authorization: Bearer {{authToken}}
+
+### 13. Record Video Watch
+POST {{host}}/api/v1/watch
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "video_id": "{{videoId}}",
+  "completed": true
+}
+
+### 14. Get Watch History
+GET {{host}}/api/v1/watch/history
+Authorization: Bearer {{authToken}}

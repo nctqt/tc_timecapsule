@@ -36,10 +36,10 @@ FROM videos
 WHERE id = $1
 LIMIT 1;
 
--- name: ListVideosByMilestone :many
+-- name: ListVideosByMilestoneIDs :many
 SELECT * 
 FROM videos
-WHERE milestone_id = $1 
+WHERE milestone_id = ANY(sqlc.slice('milestone_ids')::uuid[])
   AND status IN ('analyzed', 'approved')
 ORDER BY COALESCE(estimated_event_date, published_at) ASC;
 

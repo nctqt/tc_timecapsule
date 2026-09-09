@@ -94,75 +94,82 @@ func (cfg *apiConfig) handlerDeleteCase(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type MilestoneWithMediaResponse struct {
+type MilestoneWithVideos struct {
 	database.Milestone
 	Videos []database.Video `json:"videos"`
 }
 
 type CaseTimelineResponse struct {
-	Case       database.Case                `json:"case"`
-	Milestones []MilestoneWithMediaResponse `json:"milestones"`
+	Case       database.Case         `json:"case"`
+	Milestones []MilestoneWithVideos `json:"milestones"`
 }
 
 func (cfg *apiConfig) handlerGetCaseTimeline(w http.ResponseWriter, r *http.Request) {
-	caseID := r.PathValue("case_id")
-	caseUUID, err := uuid.Parse(caseID)
+	caseIDStr := r.PathValue("case_id")
+	caseID, err := uuid.Parse(caseIDStr)
 	if err != nil {
-		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid case ID format", err)
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid case id format", err)
 		return
 	}
 
-	ctx := r.Context()
-
-	// fetch case
-	caseRecord, err := cfg.queries.GetCaseByID(ctx, caseUUID)
+	// 1. Fetch case details
+	caseData, err := cfg.queries.GetCaseByID(r.Context(), caseID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			jsonhelp.RespondWithError(w, http.StatusNotFound, "Case not found", err)
-			return
-		}
-		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not retrieve case", err)
+		jsonhelp.RespondWithError(w, http.StatusNotFound, "Case not found", err)
 		return
 	}
 
-	// fetch milestones sorted chronologically
-	milestones, err := cfg.queries.ListMilestonesByCase(ctx, caseUUID)
+	// 2. Fetch milestones for the case
+	milestones, err := cfg.queries.ListMilestonesByCase(r.Context(), caseID)
 	if err != nil {
-		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not retrieve milestones", err)
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not fetch milestones", err)
 		return
 	}
 
-	// assemble milestones and attached videos
-	milestonesWithMedia := make([]MilestoneWithMediaResponse, 0, len(milestones))
-
-	for _, m := range milestones {
-		nullMilestoneID := uuid.NullUUID{
-			UUID:  m.ID,
-			Valid: true,
-		}
-
-		videos, err := cfg.queries.ListVideosByMilestone(ctx, nullMilestoneID)
-		if err != nil {
-			jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not retrieve milestone videos", err)
-			return
-		}
-
-		// ensure videos is an empty slice instead of null in JSON output
-		if videos == nil {
-			videos = []database.Video{}
-		}
-
-		milestonesWithMedia = append(milestonesWithMedia, MilestoneWithMediaResponse{
-			Milestone: m,
-			Videos:    videos,
+	if len(milestones) == 0 {
+		jsonhelp.RespondWithJSON(w, http.StatusOK, CaseTimelineResponse{
+			Case:       caseData,
+			Milestones: []MilestoneWithVideos{},
 		})
+		return
 	}
 
-	// return composite timeline
-	response := CaseTimelineResponse{
-		Case:       caseRecord,
-		Milestones: milestonesWithMedia,
+	// 3. Collect ALL milestone UUIDs into a slice
+	milestoneIDs := make([]uuid.UUID, len(milestones))
+	for i, m := range milestones {
+		milestoneIDs[i] = m.ID
 	}
 
-	jsonhelp.RespondWithJSON(w, http.StatusOK, response)
+	// 4. Batch fetch videos for ALL milestones at once
+	videos, err := cfg.queries.ListVideosByMilestoneIDs(r.Context(), milestoneIDs)
+	if err != nil {
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not fetch videos", err)
+		return
+	}
+
+	// 5. Group videos by milestone ID
+	videosByMilestone := make(map[uuid.UUID][]database.Video)
+	for _, v := range videos {
+		if v.MilestoneID.Valid {
+			videosByMilestone[v.MilestoneID.UUID] = append(videosByMilestone[v.MilestoneID.UUID], v)
+		}
+	}
+
+	// 6. Build the nested response
+	milestonesWithVideos := make([]MilestoneWithVideos, len(milestones))
+	for i, m := range milestones {
+		vList := videosByMilestone[m.ID]
+		if vList == nil {
+			vList = []database.Video{}
+		}
+		milestonesWithVideos[i] = MilestoneWithVideos{
+			Milestone: m,
+			Videos:    vList,
+		}
+	}
+
+	jsonhelp.RespondWithJSON(w, http.StatusOK, CaseTimelineResponse{
+		Case:       caseData,
+		Milestones: milestonesWithVideos,
+	})
 }

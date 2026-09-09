@@ -23,7 +23,8 @@ Content-Type: application/json
 }
 
 ### Paste JWT token from Login response below:
-@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0Y190aW1lY2Fwc3VsZSIsInN1YiI6Ijk3NzhiMTExLTZhNjItNDJjMC1iZGVmLThkNTQwZjllNWFmZiIsImV4cCI6MTc4ODgyNjI4OCwiaWF0IjoxNzg4NzM5ODg4fQ.7jcwy4isV89jr7BSFQmp82gwj07OX7t6gSwB4O213Ms
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0Y190aW1lY2Fwc3VsZSIsInN1YiI6ImFkMDlkZTQ3LThjZjMtNGJlMi05MzBlLWVmNTA0MzdlOGM5NSIsImV4cCI6MTc4ODk5MTc3MSwiaWF0IjoxNzg4OTA1MzcxfQ.8jSVzRqLn4AUUuDJ_eAhAOshlLtDcMYSjDpuct8LKs0
+
 
 
 
@@ -38,8 +39,80 @@ Content-Type: application/json
 }
 
 ### Paste the video ID returned from Step 3 below:
-@videoId = f02020af-82af-465e-b540-2a9c09d243f5
+@videoId = 8a570e9f-c92a-4e2f-a062-35e2cc246939
 
+
+### enrich video, to set status
+POST {{host}}/api/v1/videos/8a570e9f-c92a-4e2f-a062-35e2cc246939/enrich
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+	"Title": "the chris watts case",
+	"Description": "family annihilator"
+}
+
+
+
+### create a case
+POST {{host}}/api/v1/cases
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+	"Title": "the chris watts case",
+	"Description": "family annihilator"
+}
+
+### attach milestone to case
+POST http://localhost:8080/api/v1/cases/13c9317e-f634-4e5d-8ba2-0da09903195e/milestones
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "title": "Disappearance Reported",
+  "description": "Shanann Watts reported missing by her friend Nickole Atkinson after missed doctor appointments.",
+  "event_date": "2018-08-13T12:00:00Z"
+}
+
+### list unlinked videos
+GET http://localhost:8080/api/v1/videos/unlinked
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### list linked videos
+GET http://localhost:8080/api/v1/videos/linked
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### get cases
+GET http://localhost:8080/api/v1/cases
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### get milestones
+GET http://localhost:8080/api/v1/cases/13c9317e-f634-4e5d-8ba2-0da09903195e/milestones
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### attach video to milestone
+PUT http://localhost:8080/api/v1/milestones/74ddbb76-d8f4-4596-98a2-44abf00e2892/videos/8a570e9f-c92a-4e2f-a062-35e2cc246939
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "youtube_video_id": "dQw4w9WgXcQ",
+  "title": "Police Bodycam: Initial Welfare Check",
+  "channel_name": "True Crime Recaps",
+  "status": "analyzed",
+  "summary": "Officer arrival at the residence, initial walkthrough with Chris Watts, and early neighborhood canvassing.",
+  "category": "Bodycam"
+}
+
+### get videos by milestone
+GET http://localhost:8080/api/v1/milestones/74ddbb76-d8f4-4596-98a2-44abf00e2892/videos
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 ### 4. Record Video Watch
 POST {{host}}/api/v1/watch

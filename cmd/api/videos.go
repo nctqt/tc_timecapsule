@@ -95,16 +95,13 @@ func (cfg *apiConfig) handlerListVideosByMilestone(w http.ResponseWriter, r *htt
 		return
 	}
 
-	nullMilestoneID := uuid.NullUUID{
-		UUID:  milestoneUUID,
-		Valid: true,
-	}
-
-	videos, err := cfg.queries.ListVideosByMilestone(r.Context(), nullMilestoneID)
+	// Pass a slice of uuid.UUID containing just this one ID
+	videos, err := cfg.queries.ListVideosByMilestoneIDs(r.Context(), []uuid.UUID{milestoneUUID})
 	if err != nil {
 		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not gather videos by milestone", err)
 		return
 	}
+
 	jsonhelp.RespondWithJSON(w, http.StatusOK, videos)
 }
 
