@@ -16,8 +16,8 @@ import (
 )
 
 type CreateVideoRequest struct {
-	URL         string         `json:"url"`
-	MilestoneID *uuid.NullUUID `json:"milestone_id,omitempty"`
+	URL         string     `json:"url"`
+	MilestoneID *uuid.UUID `json:"milestone_id,omitempty"`
 }
 
 func (cfg *apiConfig) handlerCreateVideo(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,10 @@ func (cfg *apiConfig) handlerCreateVideo(w http.ResponseWriter, r *http.Request)
 	// map pointer to uuid.NullUUID for database insertion
 	var milestoneID uuid.NullUUID
 	if req.MilestoneID != nil {
-		milestoneID = *req.MilestoneID
+		milestoneID = uuid.NullUUID{
+			UUID:  *req.MilestoneID,
+			Valid: true,
+		}
 	}
 
 	// we have a url, get video meta data
@@ -60,7 +63,7 @@ func (cfg *apiConfig) handlerCreateVideo(w http.ResponseWriter, r *http.Request)
 		CreatedAt:      now,
 		UpdatedAt:      now,
 		Category:       "uncategorized",
-		Status:         "pending_review", // default status
+		Status:         "pending", // default status
 	})
 	if err != nil {
 		// check if the error is a pgx unique constraint violation (SQLSTATE 23505)

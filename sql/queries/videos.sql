@@ -57,9 +57,11 @@ ORDER BY created_at DESC;
 
 -- name: LinkVideoToMilestone :exec
 UPDATE videos
-SET milestone_id = $1,
-    updated_at = $3
-WHERE id = $2;
+SET 
+    milestone_id = $1,
+    status = 'approved',
+    updated_at = $2
+WHERE id = $3;
 
 -- name: UnlinkVideoFromMilestone :exec
 UPDATE videos

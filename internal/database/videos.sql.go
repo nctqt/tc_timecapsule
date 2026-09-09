@@ -169,19 +169,21 @@ func (q *Queries) GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error)
 
 const linkVideoToMilestone = `-- name: LinkVideoToMilestone :exec
 UPDATE videos
-SET milestone_id = $1,
-    updated_at = $3
-WHERE id = $2
+SET 
+    milestone_id = $1,
+    status = 'approved',
+    updated_at = $2
+WHERE id = $3
 `
 
 type LinkVideoToMilestoneParams struct {
 	MilestoneID uuid.NullUUID `json:"milestone_id"`
-	ID          uuid.UUID     `json:"id"`
 	UpdatedAt   time.Time     `json:"updated_at"`
+	ID          uuid.UUID     `json:"id"`
 }
 
 func (q *Queries) LinkVideoToMilestone(ctx context.Context, arg LinkVideoToMilestoneParams) error {
-	_, err := q.db.ExecContext(ctx, linkVideoToMilestone, arg.MilestoneID, arg.ID, arg.UpdatedAt)
+	_, err := q.db.ExecContext(ctx, linkVideoToMilestone, arg.MilestoneID, arg.UpdatedAt, arg.ID)
 	return err
 }
 

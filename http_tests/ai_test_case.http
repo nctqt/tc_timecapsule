@@ -1,0 +1,193 @@
+@baseUrl = http://localhost:8080
+@email = dev@example.com
+@password = secretpassword123
+
+# 1. Register Admin User
+# @name register
+POST {{baseUrl}}/api/v1/users/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+
+# 2. Login & Capture JWT Token
+# @name login
+POST {{baseUrl}}/api/v1/users/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+
+@authToken = {{login.response.body.token}}
+
+# 3. Create Mock Case
+# @name createCase
+POST {{baseUrl}}/api/v1/cases
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "The Disappearance of Mock Subject A",
+  "description": "Comprehensive timeline test case for frontend layout testing.",
+  "status": "active"
+}
+
+###
+
+@caseId = {{createCase.response.body.id}}
+
+# 4. Create 5 Milestones
+
+# @name m1
+POST {{baseUrl}}/api/v1/cases/{{caseId}}/milestones
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Milestone 1: Initial Report & Search Begins",
+  "description": "First 48 hours following the disappearance report.",
+  "event_date": "2023-01-10T08:00:00Z"
+}
+
+###
+
+# @name m2
+POST {{baseUrl}}/api/v1/cases/{{caseId}}/milestones
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Milestone 2: Person of Interest Identified",
+  "description": "Law enforcement releases surveillance footage.",
+  "event_date": "2023-01-15T12:00:00Z"
+}
+
+###
+
+# @name m3
+POST {{baseUrl}}/api/v1/cases/{{caseId}}/milestones
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Milestone 3: Search Warrant Executed",
+  "description": "Forensic team searches key location.",
+  "event_date": "2023-02-01T10:00:00Z"
+}
+
+###
+
+# @name m4
+POST {{baseUrl}}/api/v1/cases/{{caseId}}/milestones
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Milestone 4: Formal Indictment",
+  "description": "Grand jury hands down official charges.",
+  "event_date": "2023-03-20T14:30:00Z"
+}
+
+###
+
+# @name m5
+POST {{baseUrl}}/api/v1/cases/{{caseId}}/milestones
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Milestone 5: Trial Begins",
+  "description": "Opening arguments delivered in court.",
+  "event_date": "2023-06-01T09:00:00Z"
+}
+
+###
+
+@m1_id = {{m1.response.body.id}}
+@m2_id = {{m2.response.body.id}}
+@m3_id = {{m3.response.body.id}}
+@m4_id = {{m4.response.body.id}}
+@m5_id = {{m5.response.body.id}}
+
+# 5. Ingest & Link Videos — Milestone 1
+
+# @name v1_1
+POST {{baseUrl}}/api/v1/videos
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{ "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
+
+###
+
+PUT {{baseUrl}}/api/v1/milestones/{{m1_id}}/videos/{{v1_1.response.body.id}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# @name v1_2
+POST {{baseUrl}}/api/v1/videos
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{ "url": "https://www.youtube.com/watch?v=3JZ_D3ELwOQ" }
+
+###
+
+PUT {{baseUrl}}/api/v1/milestones/{{m1_id}}/videos/{{v1_2.response.body.id}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# @name v1_3
+POST {{baseUrl}}/api/v1/videos
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{ "url": "https://www.youtube.com/watch?v=L_jWHffIx5E" }
+
+###
+
+PUT {{baseUrl}}/api/v1/milestones/{{m1_id}}/videos/{{v1_3.response.body.id}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# @name v1_4
+POST {{baseUrl}}/api/v1/videos
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{ "url": "https://www.youtube.com/watch?v=fJ9rUzIMcZQ" }
+
+###
+
+PUT {{baseUrl}}/api/v1/milestones/{{m1_id}}/videos/{{v1_4.response.body.id}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# @name v1_5
+POST {{baseUrl}}/api/v1/videos
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{ "url": "https://www.youtube.com/watch?v=kJQP7kiw5Fk" }
+
+###
+
+PUT {{baseUrl}}/api/v1/milestones/{{m1_id}}/videos/{{v1_5.response.body.id}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# 6. Verify Full Case Timeline for Frontend
+GET {{baseUrl}}/api/v1/cases/{{caseId}}/timeline
