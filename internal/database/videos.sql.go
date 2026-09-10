@@ -167,11 +167,56 @@ func (q *Queries) GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error)
 	return i, err
 }
 
+const getVideos = `-- name: GetVideos :many
+SELECT id, milestone_id, youtube_video_id, title, channel_name, description, published_at, created_at, updated_at, category, status, ai_summary, raw_transcript, estimated_event_date, transcript_processed_at, summary_source
+FROM videos
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetVideos(ctx context.Context) ([]Video, error) {
+	rows, err := q.db.QueryContext(ctx, getVideos)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Video
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.MilestoneID,
+			&i.YoutubeVideoID,
+			&i.Title,
+			&i.ChannelName,
+			&i.Description,
+			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Category,
+			&i.Status,
+			&i.AiSummary,
+			&i.RawTranscript,
+			&i.EstimatedEventDate,
+			&i.TranscriptProcessedAt,
+			&i.SummarySource,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const linkVideoToMilestone = `-- name: LinkVideoToMilestone :exec
 UPDATE videos
 SET 
     milestone_id = $1,
-    status = 'approved',
     updated_at = $2
 WHERE id = $3
 `

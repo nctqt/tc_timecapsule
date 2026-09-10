@@ -59,7 +59,6 @@ ORDER BY created_at DESC;
 UPDATE videos
 SET 
     milestone_id = $1,
-    status = 'approved',
     updated_at = $2
 WHERE id = $3;
 
@@ -94,3 +93,8 @@ UPDATE videos
 SET category = $2,
     updated_at = $3
 WHERE id = $1;
+
+-- name: GetVideos :many
+SELECT *
+FROM videos
+ORDER BY created_at DESC;

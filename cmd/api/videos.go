@@ -251,3 +251,17 @@ func (cfg *apiConfig) handlerUpdateVideoCategory(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "Category updated successfully"}`))
 }
+
+func (cfg *apiConfig) handlerGetVideos(w http.ResponseWriter, r *http.Request) {
+	videos, err := cfg.queries.GetVideos(r.Context())
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			jsonhelp.RespondWithError(w, http.StatusNotFound, "Videos not found", err)
+			return
+		}
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not get videos", err)
+		return
+	}
+
+	jsonhelp.RespondWithJSON(w, http.StatusOK, videos)
+}

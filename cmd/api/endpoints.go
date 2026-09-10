@@ -47,8 +47,9 @@ func registerEndpoints(apiCfg *apiConfig) {
 	apiCfg.mux.HandleFunc("POST /api/v1/videos", apiCfg.adminMiddleware(apiCfg.handlerCreateVideo))
 	apiCfg.mux.HandleFunc("POST /api/v1/videos/{video_id}/enrich", apiCfg.adminMiddleware(apiCfg.handlerEnrichVideo))
 	apiCfg.mux.HandleFunc("GET /api/v1/videos/unlinked", apiCfg.adminMiddleware(apiCfg.handlerListUnlinkedVideos))
-	apiCfg.mux.HandleFunc("PUT /api/v1/videos/{video_id}/category", apiCfg.adminMiddleware(apiCfg.handlerUpdateVideoCategory))
-	apiCfg.mux.HandleFunc("PUT /api/v1/videos/{video_id}/status", apiCfg.adminMiddleware(apiCfg.handlerUpdateVideoStatus))
+	apiCfg.mux.HandleFunc("PATCH /api/v1/videos/{video_id}/category", apiCfg.adminMiddleware(apiCfg.handlerUpdateVideoCategory))
+	apiCfg.mux.HandleFunc("PATCH /api/v1/videos/{video_id}/status", apiCfg.adminMiddleware(apiCfg.handlerUpdateVideoStatus))
+	apiCfg.mux.HandleFunc("GET /api/v1/videos", apiCfg.adminMiddleware(apiCfg.handlerGetVideos))
 
 	// milestone linking
 	apiCfg.mux.HandleFunc("PUT /api/v1/milestones/{milestone_id}/videos/{video_id}", apiCfg.adminMiddleware(apiCfg.handlerLinkVideoToMilestone))
