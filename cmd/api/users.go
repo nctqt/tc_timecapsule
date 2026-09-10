@@ -13,8 +13,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/nctqt/tc_timecapsule/internal/database"
-	"github.com/nctqt/tc_timecapsule/internal/jsonhelp"
+	"github.com/nctqt/casechronicle/internal/database"
+	"github.com/nctqt/casechronicle/internal/jsonhelp"
 )
 
 type RegisterUserRequest struct {
@@ -49,7 +49,7 @@ func (cfg *apiConfig) makeJWT(userID uuid.UUID, role string, expiresIn time.Dura
 	claims := CustomClaims{
 		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    "tc_timecapsule",
+			Issuer:    "casechronicle",
 			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
 			Subject:   userID.String(),

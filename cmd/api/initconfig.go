@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	tc "github.com/nctqt/tc_timecapsule"
-	"github.com/nctqt/tc_timecapsule/internal/database"
-	"github.com/nctqt/tc_timecapsule/internal/openrouter"
-	"github.com/nctqt/tc_timecapsule/internal/transcript"
-	"github.com/nctqt/tc_timecapsule/internal/worker"
-	"github.com/nctqt/tc_timecapsule/internal/youtube"
+	tc "github.com/nctqt/casechronicle"
+	"github.com/nctqt/casechronicle/internal/database"
+	"github.com/nctqt/casechronicle/internal/openrouter"
+	"github.com/nctqt/casechronicle/internal/transcript"
+	"github.com/nctqt/casechronicle/internal/worker"
+	"github.com/nctqt/casechronicle/internal/youtube"
 	"github.com/pressly/goose/v3"
 )
 

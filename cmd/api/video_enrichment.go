@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nctqt/tc_timecapsule/internal/database"
-	"github.com/nctqt/tc_timecapsule/internal/jsonhelp"
-	"github.com/nctqt/tc_timecapsule/internal/openrouter"
-	"github.com/nctqt/tc_timecapsule/internal/worker"
+	"github.com/nctqt/casechronicle/internal/database"
+	"github.com/nctqt/casechronicle/internal/jsonhelp"
+	"github.com/nctqt/casechronicle/internal/openrouter"
+	"github.com/nctqt/casechronicle/internal/worker"
 )
 
 func (cfg *apiConfig) processVideoEnrichment(ctx context.Context, videoID uuid.UUID) (err error) {

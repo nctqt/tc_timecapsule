@@ -10,7 +10,7 @@ import (
 	"syscall"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/nctqt/tc_timecapsule/internal/worker"
+	"github.com/nctqt/casechronicle/internal/worker"
 )
 
 func main() {

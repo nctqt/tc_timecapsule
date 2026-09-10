@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nctqt/tc_timecapsule/internal/jsonhelp"
+	"github.com/nctqt/casechronicle/internal/jsonhelp"
 )
 
 type Client struct {
@@ -101,8 +101,8 @@ Respond ONLY with a valid JSON object matching this schema:
 	}
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("HTTP-Referer", "https://github.com/nctqt/tc_timecapsule") // optional: repo/site URL
-	req.Header.Set("X-Title", "temporary name - true crime video timeline")   // optional: app name
+	req.Header.Set("HTTP-Referer", "https://github.com/nctqt/casechronicle") // optional: repo/site URL
+	req.Header.Set("X-Title", "temporary name - true crime video timeline")  // optional: app name
 
 	// send request
 	resp, err := c.httpClient.Do(req)

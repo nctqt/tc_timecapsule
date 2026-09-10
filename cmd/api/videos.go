@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/nctqt/tc_timecapsule/internal/database"
-	"github.com/nctqt/tc_timecapsule/internal/jsonhelp"
+	"github.com/nctqt/casechronicle/internal/database"
+	"github.com/nctqt/casechronicle/internal/jsonhelp"
 )
 
 type CreateVideoRequest struct {

@@ -16,11 +16,11 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
-	"github.com/nctqt/tc_timecapsule/internal/database"
-	"github.com/nctqt/tc_timecapsule/internal/openrouter"
-	"github.com/nctqt/tc_timecapsule/internal/transcript"
-	"github.com/nctqt/tc_timecapsule/internal/worker"
-	"github.com/nctqt/tc_timecapsule/internal/youtube"
+	"github.com/nctqt/casechronicle/internal/database"
+	"github.com/nctqt/casechronicle/internal/openrouter"
+	"github.com/nctqt/casechronicle/internal/transcript"
+	"github.com/nctqt/casechronicle/internal/worker"
+	"github.com/nctqt/casechronicle/internal/youtube"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/pressly/goose/v3"
@@ -65,7 +65,7 @@ func setupTestApiConfig(t *testing.T) *apiConfig {
 		Env: []string{
 			"POSTGRES_PASSWORD=secret",
 			"POSTGRES_USER=testuser",
-			"POSTGRES_DB=timecapsule_test",
+			"POSTGRES_DB=casechronicle_test",
 		},
 	}, func(config *docker.HostConfig) {
 		config.AutoRemove = true // automatically purge container when stopped
@@ -83,7 +83,7 @@ func setupTestApiConfig(t *testing.T) *apiConfig {
 
 	var db *sql.DB
 	hostAndPort := resource.GetHostPort("5432/tcp")
-	databaseURL := fmt.Sprintf("postgres://testuser:secret@%s/timecapsule_test?sslmode=disable", hostAndPort)
+	databaseURL := fmt.Sprintf("postgres://testuser:secret@%s/casechronicle_test?sslmode=disable", hostAndPort)
 
 	// inline func to open the db
 	openDatabase := func() error {

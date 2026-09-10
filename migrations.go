@@ -1,4 +1,4 @@
-package tctimecapsule
+package casechronicle
 
 import "embed"
 

@@ -1,4 +1,4 @@
-module github.com/nctqt/tc_timecapsule
+module github.com/nctqt/casechronicle
 
 go 1.26.5
 
