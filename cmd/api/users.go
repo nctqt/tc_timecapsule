@@ -39,13 +39,21 @@ type AuthResponse struct {
 	Token string       `json:"token"`
 }
 
-// helper to generate JWT signed with your secret key
-func (cfg *apiConfig) makeJWT(userID uuid.UUID, expiresIn time.Duration) (string, error) {
-	claims := jwt.RegisteredClaims{
-		Issuer:    "tc_timecapsule",
-		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
-		Subject:   userID.String(),
+type CustomClaims struct {
+	Role string `json:"role"`
+	jwt.RegisteredClaims
+}
+
+// helper to generate JWT signed with secret key
+func (cfg *apiConfig) makeJWT(userID uuid.UUID, role string, expiresIn time.Duration) (string, error) {
+	claims := CustomClaims{
+		Role: role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "tc_timecapsule",
+			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
+			Subject:   userID.String(),
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -97,7 +105,7 @@ func (cfg *apiConfig) handlerRegisterUser(w http.ResponseWriter, r *http.Request
 	}
 
 	// issue JWT token (valid for 24 hours)
-	token, err := cfg.makeJWT(newUser.ID, 24*time.Hour)
+	token, err := cfg.makeJWT(newUser.ID, "user", 24*time.Hour)
 	if err != nil {
 		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not issue auth token", err)
 		return
@@ -147,7 +155,12 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// issue JWT token (valid for 24 hours)
-	token, err := cfg.makeJWT(user.ID, 24*time.Hour)
+	role := "user"
+	if user.Email == "nctqt@proton.me" {
+		role = "admin"
+	}
+
+	token, err := cfg.makeJWT(user.ID, role, 24*time.Hour)
 	if err != nil {
 		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Could not issue auth token", err)
 		return

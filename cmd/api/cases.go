@@ -105,6 +105,16 @@ type CaseTimelineResponse struct {
 }
 
 func (cfg *apiConfig) handlerGetCaseTimeline(w http.ResponseWriter, r *http.Request) {
+	// safely retrieve userID from context (defaults to zero-value uuid.Nil if absent/invalid)
+	userID, ok := r.Context().Value(userIDContextKey).(uuid.UUID)
+	isAuthenticated := ok && userID != uuid.Nil
+
+	if isAuthenticated {
+		// User is logged in with valid ID: userID
+		// (For now, you don't even need to do anything extra here!)
+	}
+
+	// Continue executing standard public timeline query as usual...
 	caseIDStr := r.PathValue("case_id")
 	caseID, err := uuid.Parse(caseIDStr)
 	if err != nil {

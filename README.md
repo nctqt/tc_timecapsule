@@ -5,3 +5,5 @@ get going:
 docker compose down -v   // for fresh db if needed
 docker compose up -d
 go run ./cmd/api/
+
+tree -I 'vendor|.git' 

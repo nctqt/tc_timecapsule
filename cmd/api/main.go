@@ -38,7 +38,7 @@ func main() {
 	addr := fmt.Sprintf("%s:%s", apiCfg.httpHost, apiCfg.httpPort)
 	server := &http.Server{
 		Addr:    addr,
-		Handler: CORSMiddleware(apiCfg.mux),
+		Handler: middlewareCORS(apiCfg.mux),
 	}
 
 	// non-blocking http server

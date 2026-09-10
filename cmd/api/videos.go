@@ -181,3 +181,73 @@ func (cfg *apiConfig) handlerUnlinkVideoFromMilestone(w http.ResponseWriter, r *
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+type UpdateVideoStatusParams struct {
+	ID     uuid.UUID `json:"id"`
+	Status string    `json:"status"`
+}
+
+func (cfg *apiConfig) handlerUpdateVideoStatus(w http.ResponseWriter, r *http.Request) {
+	videoID := r.PathValue("video_id")
+	videoUUID, err := uuid.Parse(videoID)
+	if err != nil {
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid video id format", err)
+		return
+	}
+
+	var req UpdateVideoStatusParams
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		// return the exact go decoding error to see what failed
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	err = cfg.queries.UpdateVideoStatus(r.Context(), database.UpdateVideoStatusParams{
+		ID:        videoUUID,
+		Status:    req.Status,
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Failed to update video status", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "Status updated successfully"}`))
+}
+
+type UpdateVideoCategoryParams struct {
+	ID       uuid.UUID `json:"id"`
+	Category string    `json:"category"`
+}
+
+func (cfg *apiConfig) handlerUpdateVideoCategory(w http.ResponseWriter, r *http.Request) {
+	videoID := r.PathValue("video_id")
+	videoUUID, err := uuid.Parse(videoID)
+	if err != nil {
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, "Invalid video id format", err)
+		return
+	}
+
+	var req UpdateVideoCategoryParams
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		// return the exact go decoding error to see what failed
+		jsonhelp.RespondWithError(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	err = cfg.queries.UpdateVideoCategory(r.Context(), database.UpdateVideoCategoryParams{
+		ID:        videoUUID,
+		Category:  req.Category,
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		jsonhelp.RespondWithError(w, http.StatusInternalServerError, "Failed to update video category", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "Category updated successfully"}`))
+}

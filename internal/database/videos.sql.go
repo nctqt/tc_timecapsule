@@ -401,6 +401,24 @@ func (q *Queries) UpdateVideoAnalysis(ctx context.Context, arg UpdateVideoAnalys
 	return i, err
 }
 
+const updateVideoCategory = `-- name: UpdateVideoCategory :exec
+UPDATE videos
+SET category = $2,
+    updated_at = $3
+WHERE id = $1
+`
+
+type UpdateVideoCategoryParams struct {
+	ID        uuid.UUID `json:"id"`
+	Category  string    `json:"category"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (q *Queries) UpdateVideoCategory(ctx context.Context, arg UpdateVideoCategoryParams) error {
+	_, err := q.db.ExecContext(ctx, updateVideoCategory, arg.ID, arg.Category, arg.UpdatedAt)
+	return err
+}
+
 const updateVideoStatus = `-- name: UpdateVideoStatus :exec
 UPDATE videos
 SET status = $2,

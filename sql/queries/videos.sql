@@ -88,3 +88,9 @@ UPDATE videos
 SET raw_transcript = $2,
     updated_at = $3
 WHERE id = $1;
+
+-- name: UpdateVideoCategory :exec
+UPDATE videos
+SET category = $2,
+    updated_at = $3
+WHERE id = $1;
