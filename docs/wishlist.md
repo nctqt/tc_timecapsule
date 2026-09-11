@@ -1,5 +1,11 @@
 ### What's next? (in no particular order):
 
+- [x]containerize
+- [ ]harden
+- [ ]deployment monitoring
+- [ ]logs - each container and the host
+- [ ]general website stat tracking / metrics
+- [ ]popular creators on the sidebar?
 - [ ]edit milestones data
 - [ ]pagination of sql responses
 - [ ]edit video titles / summaries
@@ -15,3 +21,4 @@
 - [ ]watch time tracking
 - [ ]more features if a logged-in user 
 - [ ]even more features if a vip
+- [ ]branding
